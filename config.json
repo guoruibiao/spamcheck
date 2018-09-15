@@ -1,0 +1,10 @@
+{
+  "SOCK_FILE": "/tmp/spamcheck.sock",
+  "WORKSPACE": "/Users/biao/go/src/godemo/spamcheck",
+  "CLASSES": [
+    "normalwords",
+    "adwords"
+  ],
+  "DICTIONARYFILE": "/usr/local/Cellar/go/1.10.3/src/github.com/huichen/sego/data/dictionary.txt",
+  "SOCKET_BUFFER_SIZE": 1024
+}
