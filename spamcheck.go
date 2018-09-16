@@ -107,6 +107,19 @@ func GetClassifyResult(model *nbclassifier.Model, segmenter sego.Segmenter, cont
 	return result
 }
 
+func HandleForRequest(client net.Conn, model *nbclassifier.Model, segmenter sego.Segmenter, config *Config) {
+	buf := make([]byte, config.SocketBufferSize)
+	datalength, _ := client.Read(buf)
+	data := buf[:datalength]
+
+	class := GetClassifyResult(model, segmenter, string(data))
+	response := []byte("")
+	if len(class) > 0 {
+		response = []byte(class)
+	}
+	_, _ = client.Write(response)
+}
+
 func RunAsSock(config *Config) {
 	socket, _ := net.Listen("unix", config.SockFile)
 	defer syscall.Unlink(config.SockFile)
@@ -119,16 +132,8 @@ func RunAsSock(config *Config) {
 	// handle request
 	for {
 		client, _ := socket.Accept()
-		buf := make([]byte, config.SocketBufferSize)
-		datalength, _ := client.Read(buf)
-		data := buf[:datalength]
-
-		class := GetClassifyResult(model, segmenter, string(data))
-		response := []byte("")
-		if len(class) > 0 {
-			response = []byte(class)
-		}
-		_, _ = client.Write(response)
+		// 引入go的goroutine，增强效率
+		go HandleForRequest(client, model, segmenter, config)
 	}
 }
 
