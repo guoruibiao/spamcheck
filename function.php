@@ -13,11 +13,54 @@ class RedisHelper {
         }
         return self::$_instance;
     }
+
+    public function getRedisInstance() {
+        return $this->redis;
+    }
 }
 
+function getClassifyResult($sockfile, $content) {
+    $socket = socket_create(AF_UNIX, SOCK_STREAM, 0);
+    socket_connect($socket, $sockfile);
+    socket_send($socket, $content, strlen($content), 0);
+    $response = socket_read($socket, 1024);
+    socket_close($socket);
+    return $response;
+}
 
-$rs = RedisHelper::getInstance();
-$key = "publicchatmsgqueue";
+function sendMsgToDingDing($msg="", $webhook="", $phones=array(), $isAtAll=false) {
+    $payload = array(
+        "msgtype" => "text",
+        "text" => array(
+            "content" => $msg,
+        ),
+        "at" => array(
+            "atMobiles" => $phones,
+            "isAtAll" => $isAtAll,
+        ),
+    );
+    $result = httpPost($webhook, json_encode($payload));
+}
 
-$ret = $rs->zrevrange($key, 0, 1, true);
-var_dump($ret);
+function httpPost( $url, $post = '', $timeout = 5   ){
+    if(empty($url)){
+        return ;
+    }
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+
+    if( $post != '' && !empty( $post   )   ){
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Content-Length: ' . strlen($post)));
+    }
+    curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+    $result = curl_exec($ch);
+    curl_close($ch);
+    return $result;
+
+}
